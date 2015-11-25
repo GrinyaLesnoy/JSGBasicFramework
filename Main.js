@@ -4,12 +4,14 @@
 classes.Main = {
 	objectType : 'class',
 	
-	zoom : 16,//масштаб: для экономии ресурсов, оригинл игры соотв. минимальному шагу. однако, визуальное представление может быть увел. версия игры - нап., в10 раз () не совс ясго, как реализ. инерцию 
+	
+	KeyDefault : true,//Разрешает использовать назначения клавиш клавиатуры по умолчанию
+
 	__construct : function(){
 		root.Main = root.main = this;
 		this.debug = ($_GET['debug']); 
 		
-		root.classes.$_import = ['Game', 'Hero', 'Maps', 'Level', 'LayersBox',  'Ground', 'Camera','VirtualController', 'Viewed'];
+		root.classes.$_import = [];//Список загружаемых классов (из корня папки classes)
 		
 		if($_GET['debug']=='full'){classes.$_import.push('Debugger');}
 		//this.Intit();

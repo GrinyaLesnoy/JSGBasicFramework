@@ -436,8 +436,8 @@ $_SYS.Loader = {
 			options.body = null;
 			if(options.data){
 				var body = '', formData = new FormData();
-				for(var key in options.data){
-					if(typeof options.data[key]=='object')options.data[key]=JSON.stringify(options.data[key]);
+				for(var key in options.data){//if(options.data[key].type){console.log(options.data[key].type);}
+					if(typeof options.data[key]=='object' && ! (options.data[key].type && options.data[key].type.match(/image.*/)))options.data[key]=JSON.stringify(options.data[key]);
 					formData.append(key, options.data[key]); body += key +'='+options.data[key]+'&';
 				} 
 				if(options.metod.toLowerCase() == 'GET'){
@@ -783,7 +783,7 @@ $_SYS.Key = {
 		if(!this.press[key])this.press[key]=false;
 		return this.press [key];
 	},
-	keyDown : function(e){ if(!$_GET['debug']){e.preventDefault();}
+	keyDown : function(e){ if(!$_GET['debug']&&!Main['KeyDefault']){e.preventDefault();}
 		//console.log(e.keyCode, $_SYS.Key.keyboardMap[e.keyCode]);
 		$_SYS.Key.press [ $_SYS.Key.keyboardMap[e.keyCode]]=true;
 		if($_SYS.Key.onKeyDown){$_SYS.Key.onKeyDown($_SYS.Key.keyboardMap[e.keyCode]);}
