@@ -169,7 +169,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return (typeof o == 'object' && !o.noClone &&  !this.isClass(o) &&  o.objectType!="classExtend" &&  !this.isNode(o))? true : false;
 		},
 		
-		isClass : function(o){ return (typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
+		isClass : function(o){ return ( o!=null && typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
 		
 		//Операции с объектами
 		 
