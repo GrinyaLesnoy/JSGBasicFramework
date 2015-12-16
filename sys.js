@@ -169,7 +169,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return (typeof o == 'object' && !o.noClone &&  !this.isClass(o) &&  o.objectType!="classExtend" &&  !this.isNode(o))? true : false;
 		},
 		
-		isClass : function(o){ return (typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
+		isClass : function(o){ return ( o!=null && typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
 		
 		//Операции с объектами
 		 
@@ -264,6 +264,21 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				str = str.replace(re, b[k]);
 			}
 			return str;
+		},
+		
+		
+		 toTitleCase : function(str) {// строка => Строка (Ben Blank)
+			return str.replace(/(?:^|\s)\w/g, function(match) {
+				return match.toUpperCase();
+			});
+		},
+		
+		toCamel : function(a){ // с-трока => сТрока
+			return a.replace(/(\-[a-z])/g, function($1){return $1.toUpperCase().replace('-','');});
+		},
+		
+		reCamel : function(a){ // сТрока => с-трока 
+			return a.replace(/([A-Z])/g, function($1){return ('-'+$1.toLowerCase());});
 		},
 		
 	// === Ф-ции, отвечающие за загрузку
@@ -766,21 +781,45 @@ $_SYS.CSS = {
 		
 		},
 		
+		styleNumber: {
+			"columnCount": true,
+			"fillOpacity": true,
+			"flexGrow": true,
+			"flexShrink": true,
+			"fontWeight": true,
+			"lineHeight": true,
+			"opacity": true,
+			"order": true,
+			"orphans": true,
+			"widows": true,
+			"zIndex": true,
+			"zoom": true
+		},
+		
+		cssNumber: {//Взято из jQuery - список стилей, в которых используется номер (для добавления суффикса px в остальные)
+			"columnCount": true,
+			"fillOpacity": true,
+			"flexGrow": true,
+			"flexShrink": true,
+			"fontWeight": true,
+			"lineHeight": true,
+			"opacity": true,
+			"order": true,
+			"orphans": true,
+			"widows": true,
+			"zIndex": true,
+			"zoom": true
+		},
+		
 		update : function(){
 			if(arguments.length==2)this.set(arguments[0], arguments[1]);//Можно вызвать set через update
 			if(this._new==0)return;//небыло добавленно ничего нового 
 			this._new=0;//Блокируем повторное либо лишнее выполнение
 			console.log(this.data);
 			var css ='', tmp;
-			if(!this.defValue){//Позволяет задавать переменные  числом без суффикса px
-				this.defValue = {width:'px',height:'px', padding:'px', margin:'px', 'border-radius':'px'};
-				tmp = ['top','left','right','bottom'];
-				var tmp2 = ['','margin-','padding-'];
-				for(var i in tmp2){
-					for(var j in tmp){
-						this.defValue[tmp2[i]+tmp[j]]='px';
-					}
-				}
+			if(!this.numValue){//Чтобы вручную не перебивать, т.к. хочу пока оставить список из jQuery, но здесь мне нужен список для обычных css// также, можно было бы пользоваться S_SYS.fn.toCamel( name ) каждый раз, но лучше один раз вызвать
+				 this.numValue={}
+				 for(var i in this.cssNumber){this.numValue[$_SYS.fn.reCamel(i)] = true;}
 			}
 			if(!this._find){//Если нет массива для поиска-замены псевдонимов (выполняется единожды)
 				this.setAlians();
@@ -790,7 +829,7 @@ $_SYS.CSS = {
 				css+=sel+"{\n";
 					for(var s in this.data[sel]){
 						 tmp = this.data[sel][s];
-						 if(this.defValue[s]&&typeof tmp == 'number')tmp+=this.defValue[s];
+						 if(typeof tmp == 'number'&&!this.numValue[s])tmp+='px';
 						if(typeof tmp == 'string' && tmp.indexOf('<%')!=-1) tmp = $_SYS.fn.replace(this._find, this._replace, tmp); 
 						css+="\t"+s + ':' + tmp +";\n"
 					
