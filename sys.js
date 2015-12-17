@@ -519,7 +519,7 @@ $_SYS.Loader = {
 		_this._callback = f;
 		var _update = function(path){ 
 			//root.classes(path); - получает объект класса, а так же задает самому классу свойства класса
-			var obj = root.classes(path);  if(obj.$_import){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);}
+			var obj = root.classes(path); if(obj.$_import && obj.$_import.length>0){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);}else{f();}
 		};
 		_this.Include('classes',function(){ _update('classes'); }); 
 	}
