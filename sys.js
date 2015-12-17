@@ -169,7 +169,11 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return (typeof o == 'object' && !o.noClone &&  !this.isClass(o) &&  o.objectType!="classExtend" &&  !this.isNode(o))? true : false;
 		},
 		
+<<<<<<< HEAD
 		isClass : function(o){ return (typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
+=======
+		isClass : function(o){ return ( o!=null && typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
+>>>>>>> b0c5c306018838a74a1531780f4291706f676234
 		
 		//Операции с объектами
 		 
@@ -264,6 +268,21 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				str = str.replace(re, b[k]);
 			}
 			return str;
+		},
+		
+		
+		 toTitleCase : function(str) {// строка => Строка (Ben Blank)
+			return str.replace(/(?:^|\s)\w/g, function(match) {
+				return match.toUpperCase();
+			});
+		},
+		
+		toCamel : function(a){ // с-трока => сТрока
+			return a.replace(/(\-[a-z])/g, function($1){return $1.toUpperCase().replace('-','');});
+		},
+		
+		reCamel : function(a){ // сТрока => с-трока 
+			return a.replace(/([A-Z])/g, function($1){return ('-'+$1.toLowerCase());});
 		},
 		
 	// === Ф-ции, отвечающие за загрузку
@@ -720,6 +739,7 @@ $_SYS.CSS = {
 			for( var a in this.Alias ){
 				this._find.push(a);  this._replace.push(this.Alias[a]);
 			}
+<<<<<<< HEAD
 	},
 	getSelector : function(){
 		var find = arguments[0].match(/\<\=.*?\=\>/g);
@@ -737,6 +757,25 @@ $_SYS.CSS = {
 			}
 		return selector;
 	},
+=======
+	},
+	getSelector : function(){
+		var find = arguments[0].match(/\<\=.*?\=\>/g);
+			var selector, tmp, re, data=[];
+			for(var i in find){ //Получается, вид [[1,2,3],[]..]
+				data[i]=JSON.parse(find[i].match(/\<\=(.*?)\=\>/)[1]);
+			}  
+			for(var i in data[0]){//Переберается 1й из массивов (остальные,если есть, считаются равными по length)
+				tmp = arguments[0];
+					for(var j in data){//Замена в tmp всех найденных в find значений
+						re = new RegExp(find[j].replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"),'g');  
+						tmp = tmp.replace(re, data[j][i]);
+					}  
+				selector = selector ? (selector + ', ' + tmp) : tmp; 
+			}
+		return selector;
+	},
+>>>>>>> b0c5c306018838a74a1531780f4291706f676234
 	setOne : function(selector, Data){//Добавляет стиль
 		if(selector.indexOf('<=')>-1) selector=this.getSelector(selector);
 		if(!this.data[selector])this.data[selector]={}; 
@@ -766,12 +805,46 @@ $_SYS.CSS = {
 		
 		},
 		
+<<<<<<< HEAD
+=======
+		styleNumber: {
+			"columnCount": true,
+			"fillOpacity": true,
+			"flexGrow": true,
+			"flexShrink": true,
+			"fontWeight": true,
+			"lineHeight": true,
+			"opacity": true,
+			"order": true,
+			"orphans": true,
+			"widows": true,
+			"zIndex": true,
+			"zoom": true
+		},
+		
+		cssNumber: {//Взято из jQuery - список стилей, в которых используется номер (для добавления суффикса px в остальные)
+			"columnCount": true,
+			"fillOpacity": true,
+			"flexGrow": true,
+			"flexShrink": true,
+			"fontWeight": true,
+			"lineHeight": true,
+			"opacity": true,
+			"order": true,
+			"orphans": true,
+			"widows": true,
+			"zIndex": true,
+			"zoom": true
+		},
+		
+>>>>>>> b0c5c306018838a74a1531780f4291706f676234
 		update : function(){
 			if(arguments.length==2)this.set(arguments[0], arguments[1]);//Можно вызвать set через update
 			if(this._new==0)return;//небыло добавленно ничего нового 
 			this._new=0;//Блокируем повторное либо лишнее выполнение
 			console.log(this.data);
 			var css ='', tmp;
+<<<<<<< HEAD
 			if(!this.defValue){//Позволяет задавать переменные  числом без суффикса px
 				this.defValue = {width:'px',height:'px', padding:'px', margin:'px', 'border-radius':'px'};
 				tmp = ['top','left','right','bottom'];
@@ -781,6 +854,11 @@ $_SYS.CSS = {
 						this.defValue[tmp2[i]+tmp[j]]='px';
 					}
 				}
+=======
+			if(!this.numValue){//Чтобы вручную не перебивать, т.к. хочу пока оставить список из jQuery, но здесь мне нужен список для обычных css// также, можно было бы пользоваться S_SYS.fn.toCamel( name ) каждый раз, но лучше один раз вызвать
+				 this.numValue={}
+				 for(var i in this.cssNumber){this.numValue[$_SYS.fn.reCamel(i)] = true;}
+>>>>>>> b0c5c306018838a74a1531780f4291706f676234
 			}
 			if(!this._find){//Если нет массива для поиска-замены псевдонимов (выполняется единожды)
 				this.setAlians();
@@ -790,7 +868,11 @@ $_SYS.CSS = {
 				css+=sel+"{\n";
 					for(var s in this.data[sel]){
 						 tmp = this.data[sel][s];
+<<<<<<< HEAD
 						 if(this.defValue[s]&&typeof tmp == 'number')tmp+=this.defValue[s];
+=======
+						 if(typeof tmp == 'number'&&!this.numValue[s])tmp+='px';
+>>>>>>> b0c5c306018838a74a1531780f4291706f676234
 						if(typeof tmp == 'string' && tmp.indexOf('<%')!=-1) tmp = $_SYS.fn.replace(this._find, this._replace, tmp); 
 						css+="\t"+s + ':' + tmp +";\n"
 					
