@@ -1,3 +1,12 @@
+/**
+Name : BasicXvFramevork
+Autor : Grinya Lesnoy
+version : 0.25
+licence : The MIT License (MIT)
+site : 	http://vnii.su/
+		https://vk.com/lesnoy.skazochnik
+**/
+
 (function(){   
 
 root = this;
@@ -160,23 +169,34 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return (typeof o == 'object' && !o.noClone &&  !this.isClass(o) &&  o.objectType!="classExtend" &&  !this.isNode(o))? true : false;
 		},
 		
-		isClass : function(o){ return (typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend"||o.extendOf ) ) ? true : false;}, 
+		isClass : function(o){ return (typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
 		
 		//Операции с объектами
 		 
 		
-		_import : function(a,b){//Слияние объектов Одноименные из b перекрывают a
+		_import : function(a,b){//Слияние объектов Одноименные из b перекрывают a 
 			if(typeof b != "object" || this.isNode(b))return b;
+			if(typeof a != "object" &&typeof b == "object")a={};
 			for(var key in b){  //if (b.hasOwnProperty(key)) 
-				if(this.isClass(b[key])){continue;}
-				 a[key]=( this.isCloning(a[key]) && this.isCloning(b[key])) ? this._import(a[key],b [key]) : b [key]; 
-			}
+				if(this.isClass(b[key])||key == 'objectType'){continue;}
+				if (b[key] instanceof Array) {
+					a[key] = ( a[key] && a[key] instanceof Array && b[key] instanceof Array )? a[key] : [];
+					for (var i = 0, len = b[key].length; i < len; i++) {
+						a[key][i] = a[key][i]|[];
+						a[key][i] = this._import( a[key][i] , b[key][i]);
+					} 
+				}else{ 
+					a[key]=( this.isCloning(a[key]) && this.isCloning(b[key])) ? this._import(a[key],b [key]) : this._import({},b[key]); 
+				 }
+			} 
+			 
 			return a;
 		},
 		marge : function(a,b){//то же самое, но при этом создается новый объект
 			if(typeof b != "object" || this.isNode(b))return b;
 			if(typeof a != "object" || this.isNode(a))return this.clone(b); 
-			var c ={};  for(var key in a){if(this.isClass(a[key])){continue;}c[key] = a[key];}
+			//var c ={};  for(var key in a){if(this.isClass(a[key])){continue;}c[key] = a[key];}
+			var c = this._import({},a);
 			return this._import(c,b);
 		}, 
 		extend : function(Child, Parent) {//Делает первый класс потомком второго
@@ -229,11 +249,18 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return new Date().getTime();
 		},
 		
+		objExplode : function(obj){//Разбивает объект на два массива - ключи и значения
+			var result = {key:[],value:[]};
+			for(var i in obj){result.key.push(i); result.value.push(obj[i]);}
+			return result;
+		},
+		
 		replace : function(a,b,str){//Попытка реализовать аналогичную php ф-цию
 			if(typeof a !=="object"){var a = [a];}
 			if(typeof b !=="object"){var b = [b];} 
 			for(var k in a){if (!a.hasOwnProperty(k))continue; 
-				var re = new RegExp(a[k], 'g');
+				 //Отчистка от спецсимволов
+				var re = new RegExp(a[k].replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), 'g');
 				str = str.replace(re, b[k]);
 			}
 			return str;
@@ -382,7 +409,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 	},
 		
 	//Получает разницу между 2мя числами, abs - отбрасывать "-" у отрицательных значений или нет (иногда нужно для сравнений: delta < 0 эквивалентно |a|<|b|) 
-	delta : function(a,b,abs){var z = (Math.abs(a)-Math.abs(b)); return (!abs? Math.abs(z):z);},
+	delta : function(a,b,abs){var z = (Math.abs(a)-Math.abs(b));  return (!abs? Math.abs(z):z);},
 	
 	//Debug - функция для проверки скорости выполнения скрипта
 	testTime : function(_f){
@@ -436,8 +463,8 @@ $_SYS.Loader = {
 			options.body = null;
 			if(options.data){
 				var body = '', formData = new FormData();
-				for(var key in options.data){
-					if(typeof options.data[key]=='object')options.data[key]=JSON.stringify(options.data[key]);
+				for(var key in options.data){//if(options.data[key].type){console.log(options.data[key].type);}
+					if(typeof options.data[key]=='object' && ! (options.data[key].type && options.data[key].type.match(/image.*/)))options.data[key]=JSON.stringify(options.data[key]);
 					formData.append(key, options.data[key]); body += key +'='+options.data[key]+'&';
 				} 
 				if(options.metod.toLowerCase() == 'GET'){
@@ -451,7 +478,7 @@ $_SYS.Loader = {
 				   if(xmlhttp.status == 200){ 
 					if (xmlhttp.readyState == 4) {//Complete 
 					   var data = xmlhttp.responseText;  
-					   if(options.type=="script" || options.type.toLowerCase()=="json"){ data =  eval('('+data+')');}
+					   if(options.type=="script") {data = eval('('+data+')');} else if(options.type.toLowerCase()=="json"){ data = JSON.parse(data);}
 					   options._callback.call(options._this, data,xmlhttp,options); 
 					   }
 				   }  else { console.log('Err '+url,xmlhttp);  }
@@ -492,7 +519,7 @@ $_SYS.Loader = {
 		_this._callback = f;
 		var _update = function(path){ 
 			//root.classes(path); - получает объект класса, а так же задает самому классу свойства класса
-			var obj = root.classes(path);  if(obj.$_import){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);}
+			var obj = root.classes(path); if(obj.$_import && obj.$_import.length>0){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);}else{f();}
 		};
 		_this.Include('classes',function(){ _update('classes'); }); 
 	}
@@ -524,13 +551,13 @@ $_SYS._New = function(){
 	{ o = arguments[0]; if(o.classes){result = (typeof o.classes=="object")?o.classes : eval(o.classes);}}
 	else if(arguments.length>=2)//Передан  (класс, аргументы)
 	{   result = $_SYS.fn._import({},arguments[0]);  o = arguments[1];  }
-	
 	if(result.extendOf){
 		var pathEx = (result.extendOf.indexOf('classes.')==0)?  result.extendOf.substr(result.extendOf.indexOf('.')+1) :  result.extendOf,
 		_classesArr = result.extendOf.split('.'), obj = classes;   
 		if(_classesArr[0]=='classes')_classesArr.splice(0,1);
 		for(var i in _classesArr){ 
 			obj = obj[_classesArr[i]];  result = $_SYS.fn.marge(obj,result);
+	 
 		}
 	}
 	
@@ -539,6 +566,7 @@ $_SYS._New = function(){
 		_classesArr = o.extendOf.split('.'), obj = classes; 
 		for(var i in _classesArr){
 			obj = obj[_classesArr[i]];   o = $_SYS.fn.marge(obj,o);
+			//if( obj.view&&obj.view.$ClassStyle )$_SYS.CSS.set(_classesArr[i],obj.view.$ClassStyle);//Не ясно, стоит ли добавлять сборщик стилей здесь...
 		}
 	}
 	/* if(o.classes){//Обработка цепочки классов от корневого к нижнему
@@ -566,9 +594,11 @@ $_SYS._New = function(){
 
 		}  
 		result.view.el  = $_SYS.fn.createBlock(result.parentNode, el_attr);
+		if(result.view.$ClassStyle )$_SYS.CSS.set(result,result.view.$ClassStyle); 
 	}  
 	result.objectType = 'object';
 	if(result.extendOf){delete result.extendOf;}
+	
 	if( result.__construct )result.__construct.call(result,result);//Можно задать собственную функцию, которая будет выполняться в самом конце сборки объекта
 	return  result;
 }
@@ -672,37 +702,124 @@ $_SYS.Animation = {
 		var o =$_SYS.Animation.objects;   for(var i in o){if(o[i].onEntereFrame)o[i].onEntereFrame();}
 	}
 }
-/*
+
 $_SYS.CSS = {
-	allians : {
-		'background'
+	data : {},
+	_new : 0,
+	Alias : {//Псевдонимы, вида путь -> '<%find%>' : 'replace', для сокращения записи кода
+		'<%path:bg%>' : 'Data/backgrounds',
+		'<%path:textures%>' : 'Data/textures'
 	},
-	background : (q){
-		var data = {};
-		if(typeof q=="string"){if(){}}
-		return 'background:'++';';
+	setAlians : function(){//Добавляет псевдонимы и перезаписывает _find _replace
+		if(arguments.length==2){//Если задан Alias
+			this.Alias[arguments[0]] = arguments[1];
+		}else if(typeof arguments[0] == 'object'){//Если задан набор псевдонимов ввиде массива
+			for(var a in arguments[0]){this.Alias[a] = arguments[0][a];}
+		}
+		this._find = []; this._replace = [];
+			for( var a in this.Alias ){
+				this._find.push(a);  this._replace.push(this.Alias[a]);
+			}
 	},
-	update : function(data){
-		if(!$_CSS)$_CSS={};
-			var style, css = 'h1 { background: red; }';
-		if(!style = document.getElementById('js-style')){
-			var head = document.head || document.getElementsByTagName('head')[0],
-			style = document.createElement('style');
-			style.type = 'text/css';
-			style.id = 'js-style'; 
-			head.appendChild(style);
-		} 
-		//style.innerHTML = '';
-		if (style.styleSheet){
-				style.styleSheet.cssText = css;
-			} else { 
-				while (style.firstChild) {
-					style.removeChild(style.firstChild);
+	getSelector : function(){
+		var find = arguments[0].match(/\<\=.*?\=\>/g);
+			var selector, tmp, re, data=[];
+			for(var i in find){ //Получается, вид [[1,2,3],[]..]
+				data[i]=JSON.parse(find[i].match(/\<\=(.*?)\=\>/)[1]);
+			}  
+			for(var i in data[0]){//Переберается 1й из массивов (остальные,если есть, считаются равными по length)
+				tmp = arguments[0];
+					for(var j in data){//Замена в tmp всех найденных в find значений
+						re = new RegExp(find[j].replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"),'g');  
+						tmp = tmp.replace(re, data[j][i]);
+					}  
+				selector = selector ? (selector + ', ' + tmp) : tmp; 
+			}
+		return selector;
+	},
+	setOne : function(selector, Data){//Добавляет стиль
+		if(selector.indexOf('<=')>-1) selector=this.getSelector(selector);
+		if(!this.data[selector])this.data[selector]={}; 
+		var i=0;
+		for(var s in Data){
+			//Если используются псевдонимы () 
+			if(this.data[selector][s] == Data[s])continue;
+			this.data[selector][s] = Data[s]; i++;
+		}
+		if(this._new<i)this._new=i;//Если было добавленно что-то новое, this._new задается больше 0; Сравнение < вместо == нужно чтобы не занулить непустой new (бывает, когда какая-то другая функция поставила класс на обновление)
+	},
+	set : function(mainSelector, DATA){//Добавляет стили пакетом. $ => mainSelector
+		var selector, Data;
+		if(typeof arguments[0] == 'object'){//Можно передавать объект 
+			var _s = {className : '.', id : '#', tagName : '', nodeName : ''}//Пытается найти хоть какую-то ацепку
+			for(var i in _s){if(arguments[0][i]){var mainSelector =  arguments[0][i];break;}} 
+		}
+		var _template_=[mainSelector], _find_=['$'];
+		for(var d in DATA){  
+			 selector = (_find_.length>1 || d.indexOf('$')>-1 ) ? $_SYS.fn.replace(_find_, _template_, d) : d; 
+			if(typeof DATA[d] == 'string'){
+				if(DATA[d].indexOf('template:')>-1){_template_.push(d); _find_.push('<%'+DATA[d].substr('template:'.length)+'%>');  }
+			}else{
+			 this.setOne(selector, DATA[d]);
+			 }
+		}
+		
+		},
+		
+		update : function(){
+			if(arguments.length==2)this.set(arguments[0], arguments[1]);//Можно вызвать set через update
+			if(this._new==0)return;//небыло добавленно ничего нового 
+			this._new=0;//Блокируем повторное либо лишнее выполнение
+			console.log(this.data);
+			var css ='', tmp;
+			if(!this.defValue){//Позволяет задавать переменные  числом без суффикса px
+				this.defValue = {width:'px',height:'px', padding:'px', margin:'px', 'border-radius':'px'};
+				tmp = ['top','left','right','bottom'];
+				var tmp2 = ['','margin-','padding-'];
+				for(var i in tmp2){
+					for(var j in tmp){
+						this.defValue[tmp2[i]+tmp[j]]='px';
+					}
 				}
-				style.appendChild(document.createTextNode(css));
-			} 
+			}
+			if(!this._find){//Если нет массива для поиска-замены псевдонимов (выполняется единожды)
+				this.setAlians();
+			}
+			//Сведение классов в строку
+			for(var sel in this.data){
+				css+=sel+"{\n";
+					for(var s in this.data[sel]){
+						 tmp = this.data[sel][s];
+						 if(this.defValue[s]&&typeof tmp == 'number')tmp+=this.defValue[s];
+						if(typeof tmp == 'string' && tmp.indexOf('<%')!=-1) tmp = $_SYS.fn.replace(this._find, this._replace, tmp); 
+						css+="\t"+s + ':' + tmp +";\n"
+					
+					}
+				css+="}\n";
+			}
+			console.log(css);
+			if(!this.el){
+			var head = document.head || document.getElementsByTagName('head')[0];
+			this.el = document.createElement('style');
+			this.el.type = 'text/css';
+			this.el.id = 'sys_css'; 
+			head.appendChild(this.el);
+		} 
+		//this.el.innerHTML = '';
+		if (this.el.styleSheet){
+				this.el.styleSheet.cssText = css;
+			} else { 
+				while (this.el.firstChild) {
+					this.el.removeChild(this.el.firstChild);
+				}
+				this.el.appendChild(document.createTextNode(css));
+			}
+		 
 	}
-}*/
+
+}
+
+ 
 $_SYS.ScreenResizes = {
 objects : {},
 onResizes : function(){
@@ -783,7 +900,7 @@ $_SYS.Key = {
 		if(!this.press[key])this.press[key]=false;
 		return this.press [key];
 	},
-	keyDown : function(e){ if(!$_GET['debug']){e.preventDefault();}
+	keyDown : function(e){ if(!$_GET['debug']&&!Main['KeyDefault']){e.preventDefault();}
 		//console.log(e.keyCode, $_SYS.Key.keyboardMap[e.keyCode]);
 		$_SYS.Key.press [ $_SYS.Key.keyboardMap[e.keyCode]]=true;
 		if($_SYS.Key.onKeyDown){$_SYS.Key.onKeyDown($_SYS.Key.keyboardMap[e.keyCode]);}
@@ -830,3 +947,4 @@ window.onkeyup = $_SYS.Key.keyUp;
 $_SYS.Init();
  })();
 
+                                                                                                     

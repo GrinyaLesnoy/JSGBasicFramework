@@ -40,10 +40,20 @@ Node.prototype.addChild = function (attr) {
 		if(attr['content'])a.innerHTML = attr['content'];
 		return this.appendChild(a);
 	}
+
+ 
+	Node.prototype.appEnd = function (string, returnChild) {
+		var a = document.createElement('div');
+		a.innerHTML = string;
+		if(a.childNodes.length[1]){ return this.appendChild(a.childNodes[0]); }
+		for(var i=0; i<a.childNodes.length; i++ ){  this.appendChild(a.childNodes[i]);}
+		return returnChild ? a.childNodes : this;
+	}
 	
 	Element.prototype.remove = function() {
     this.parentElement.removeChild(this);
 }
+	
 NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
     for(var i = this.length - 1; i >= 0; i--) {
         if(this[i] && this[i].parentElement) {
