@@ -39,7 +39,7 @@ body *:not(input){user-select: none;
     -webkit-touch-callout: none;
     -webkit-user-drag: none;}
 
-body {background:#000; position:relativee; color:#fff;}
+body {background:#000; position:relativee; color:#fff; font-family:Arial;}
 
 
 #Preloader{left:0; top:0; right:0; bottom:0; background: url('Data/sys/loader.gif') no-repeat 50% 50%;}

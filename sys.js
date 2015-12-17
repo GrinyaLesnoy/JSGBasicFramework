@@ -169,7 +169,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return (typeof o == 'object' && !o.noClone &&  !this.isClass(o) &&  o.objectType!="classExtend" &&  !this.isNode(o))? true : false;
 		},
 		
-		isClass : function(o){ return (typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
+		isClass : function(o){ return (o != null && typeof o == "object" && (o.objectType=="class"||o.objectType=="classExtend" ) ) ? true : false;}, 
 		
 		//Операции с объектами
 		 
@@ -305,7 +305,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 		
 		//Блокировка стандартных ф-ций браузера - чтобы не мешались
 		preventDefault : function(){
-			$_SYS.fn.removeBlock({id: 'Preloader'});
+			if(document.getElementById('Preloader')) $_SYS.fn.removeBlock({id: 'Preloader'});
 					document.oncontextmenu = function (){return false};//Будем пытаться бороться с контекстным меню
 
 					// ничего не делать в обработчике событий, за исключением отмены события
@@ -516,10 +516,11 @@ $_SYS.Loader = {
 	},
 	Classes : function( f ){//Загрузка классов
 		var _this = this;
+		if(!classes.$_import || classes.$_import.length==0){f();return;}
 		_this._callback = f;
 		var _update = function(path){ 
 			//root.classes(path); - получает объект класса, а так же задает самому классу свойства класса
-			var obj = root.classes(path); if(obj.$_import && obj.$_import.length>0){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);}else{f();}
+			var obj = root.classes(path); if(obj.$_import && obj.$_import.length>0){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);} 
 		};
 		_this.Include('classes',function(){ _update('classes'); }); 
 	}
@@ -542,7 +543,7 @@ $_SYS._Import = function(){
 }
 
 /** == Создает новый объект на основе аттрибуьлв и цепочки классов == **/
-$_SYS._New = function(){
+$_SYS._New = function(){ 
 	var o = {}, result = {};
 	if(arguments.length==0)
 	{return result;}
@@ -915,6 +916,26 @@ $_SYS.Key = {
 
 }
 
+$_SYS.LocalFile = { 
+	read : function(files, callback, _this){ 
+		if(!window.File && window.FileReader && window.FileList && window.Blob){allert('not support browser!'); return;}
+		if(!_this){_this = this;}
+		 if(!files.length){files = [files];}
+		for (var i = 0, f; f = files[i]; i++) {
+			 var reader = new FileReader();
+			 reader.onload = function(event) { var contents = event.target.result;  if(callback)callback.call(_this,f,contents,event);} 
+			 // Read in the image file as a data URL.
+		  
+		if (f.type && f.type.match('image.*')) {
+		reader.readAsDataURL(f);
+			}else{
+		reader.readAsText(f);
+		}
+		}
+	}
+	
+}
+
 window.onkeydown = $_SYS.Key.keyDown;
 window.onkeyup = $_SYS.Key.keyUp;
 
@@ -936,7 +957,7 @@ window.onkeyup = $_SYS.Key.keyUp;
 			//название файлов скриптов без ".js" - разширение доб. автоматически 
 			$_SYS.Loader._(['extends', 'Main', 'manifest'], function(){
 				$_SYS._New(classes.Main);
-				$_SYS.Loader.Classes(function(){
+				$_SYS.Loader.Classes(function(){ 
 				var data = manifest.get_library(); 
 						 if(data.images){$_SYS.Loader._(data['images'],main.Init,null,'img');} else {main.Init();}
 						 }); 
