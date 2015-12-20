@@ -93,7 +93,7 @@ Node.prototype.width = function(s){if(typeof s == "undefined"){return this.offse
 Node.prototype.height = function(s){if(typeof s == "undefined"){return this.offsetHeight;} this.style.height=s+"px"; return this;}
 Node.prototype.FullWH = function(a,s,margin){//Полный размер, включая padding, border [margin]. Можно как получить, так и задать
 var style = window.getComputedStyle(this, null),
-p = 0, l = (a = 'height') ? ['top, bottom'] : ['left, right']; 
+p = 0, l = (a == 'height') ? ['top, bottom'] : ['left, right']; 
 for(var i; i<2; i++){
 	p += parseInt('border-' + l[i] + '-width');
 	p += parseInt('padding-' +  l[i]);
