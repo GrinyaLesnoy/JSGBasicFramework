@@ -266,6 +266,20 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return str;
 		},
 		
+		toTitleCase : function(str) {// строка => Строка (Ben Blank)
+			return str.replace(/(?:^|\s)\w/g, function(match) {
+				return match.toUpperCase();
+			});
+		},
+		
+		toCamel : function(a){ // с-трока => сТрока
+			return a.replace(/(\-[a-z])/g, function($1){return $1.toUpperCase().replace('-','');});
+		},
+		
+		reCamel : function(a){ // сТрока => с-трока 
+			return a.replace(/([A-Z])/g, function($1){return ('-'+$1.toLowerCase());});
+		},
+		
 	// === Ф-ции, отвечающие за загрузку
  
 
@@ -593,8 +607,11 @@ $_SYS._New = function(){
 			//parent.view.el и parentNode могут отличаться: parent - это ссылка на родительский объект в иерархии объектов, но иерархия вложенности элементв в DOM может не совпадать (по сути, они вообще могут как угодно располагаться)
 			result.parentNode = $_SYS.GetEl(result.parent);
 
-		}  
-		result.view.el  = $_SYS.fn.createBlock(result.parentNode, el_attr);
+		}
+		if(result.view.el!==false){
+			if(typeof result.view.el == 'string'){result.view.el = document.getElementById(result.view.el); }//возможность передавать уже имеюшийся элемент либо вообще запрещать его создавать
+			if( !result.view.el )result.view.el  = $_SYS.fn.createBlock(result.parentNode, el_attr);
+		}
 		if(result.view.$ClassStyle )$_SYS.CSS.set(result,result.view.$ClassStyle); 
 	}  
 	result.objectType = 'object';
@@ -767,21 +784,45 @@ $_SYS.CSS = {
 		
 		},
 		
+		styleNumber: {
+			"columnCount": true,
+			"fillOpacity": true,
+			"flexGrow": true,
+			"flexShrink": true,
+			"fontWeight": true,
+			"lineHeight": true,
+			"opacity": true,
+			"order": true,
+			"orphans": true,
+			"widows": true,
+			"zIndex": true,
+			"zoom": true
+		},
+		
+		cssNumber: {//Взято из jQuery - список стилей, в которых используется номер (для добавления суффикса px в остальные)
+			"columnCount": true,
+			"fillOpacity": true,
+			"flexGrow": true,
+			"flexShrink": true,
+			"fontWeight": true,
+			"lineHeight": true,
+			"opacity": true,
+			"order": true,
+			"orphans": true,
+			"widows": true,
+			"zIndex": true,
+			"zoom": true
+		},
+		
 		update : function(){
 			if(arguments.length==2)this.set(arguments[0], arguments[1]);//Можно вызвать set через update
 			if(this._new==0)return;//небыло добавленно ничего нового 
 			this._new=0;//Блокируем повторное либо лишнее выполнение
 			console.log(this.data);
 			var css ='', tmp;
-			if(!this.defValue){//Позволяет задавать переменные  числом без суффикса px
-				this.defValue = {width:'px',height:'px', padding:'px', margin:'px', 'border-radius':'px'};
-				tmp = ['top','left','right','bottom'];
-				var tmp2 = ['','margin-','padding-'];
-				for(var i in tmp2){
-					for(var j in tmp){
-						this.defValue[tmp2[i]+tmp[j]]='px';
-					}
-				}
+			if(!this.numValue){//Чтобы вручную не перебивать, т.к. хочу пока оставить список из jQuery, но здесь мне нужен список для обычных css// также, можно было бы пользоваться S_SYS.fn.toCamel( name ) каждый раз, но лучше один раз вызвать
+				 this.numValue={}
+				 for(var i in this.cssNumber){this.numValue[$_SYS.fn.reCamel(i)] = true;}
 			}
 			if(!this._find){//Если нет массива для поиска-замены псевдонимов (выполняется единожды)
 				this.setAlians();
@@ -791,7 +832,7 @@ $_SYS.CSS = {
 				css+=sel+"{\n";
 					for(var s in this.data[sel]){
 						 tmp = this.data[sel][s];
-						 if(this.defValue[s]&&typeof tmp == 'number')tmp+=this.defValue[s];
+						 if(typeof tmp == 'number'&&!this.numValue[s])tmp+='px';
 						if(typeof tmp == 'string' && tmp.indexOf('<%')!=-1) tmp = $_SYS.fn.replace(this._find, this._replace, tmp); 
 						css+="\t"+s + ':' + tmp +";\n"
 					
@@ -819,6 +860,7 @@ $_SYS.CSS = {
 	}
 
 }
+
 
  
 $_SYS.ScreenResizes = {
