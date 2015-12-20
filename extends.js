@@ -91,6 +91,19 @@ Node.prototype.searchUp = function(attrName,_t,attr, max_level){
 
 Node.prototype.width = function(s){if(typeof s == "undefined"){return this.offsetWidth;} this.style.width=s+"px"; return this;}
 Node.prototype.height = function(s){if(typeof s == "undefined"){return this.offsetHeight;} this.style.height=s+"px"; return this;}
+Node.prototype.FullWH = function(a,s,margin){//Полный размер, включая padding, border [margin]. Можно как получить, так и задать
+var style = window.getComputedStyle(this, null),
+p = 0, l = (a = 'height') ? ['top, bottom'] : ['left, right']; 
+for(var i; i<2; i++){
+	p += parseInt('border-' + l[i] + '-width');
+	p += parseInt('padding-' +  l[i]);
+	if(margin)p += parseInt('margin-' + l[i] );
+}
+if(typeof s == "number" ){ this.style[a]=(s-p)+"px"; return this;}return this['offset'+$_SYS.fn.toTitleCase(a)]+p;
+}
+//сокращенные записи. Возможна передача в виде el.FullWidth() - вернет FullWH('width');  el.FullWidth(1) - выполнит FullWH('width', 1), вернет this;  el.FullWidth(1,true) - выполнит FullWH('width', 1, true), вернет this; el.FullWidth(true) - вернет FullWH('width',false,true); 
+Node.prototype.FullWidth = Node.prototype.outerWidth = function(s,margin){ if(arguments.length==1 && typeof arguments[0] == 'boolean'){var s = false, margin = arguments[0]}return this.FullWH('width',s,margin);}
+Node.prototype.FullHeight = Node.prototype.outerHeight = function(s,margin){ if(arguments.length==1 && typeof arguments[0] == 'boolean'){var s = false, margin = arguments[0]} return this.FullWH('height',s,margin);}
 Node.prototype._X = function(s){ if(typeof s == "undefined"){if(!this._x){this._x=this.offsetLeft;} return this._x;} this.style.left=s+"px"; this._x=s; return this; }
 Node.prototype._Y = function(s){ if(typeof s == "undefined"){if(!this._y){this._y=this.offsetTop;} return this._y;} this.style.top=s+"px"; this._y=s; return this; }
 //x,y,width, height отн-но центра объета
