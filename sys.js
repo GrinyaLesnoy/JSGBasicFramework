@@ -611,7 +611,7 @@ $_SYS._New = function(){
 		if(result.view.el!==false){
 			if(typeof result.view.el == 'string'){result.view.el = document.getElementById(result.view.el); }//возможность передавать уже имеюшийся элемент либо вообще запрещать его создавать
 			if( !result.view.el )result.view.el  = $_SYS.fn.createBlock(result.parentNode, el_attr);
-		}
+		}else{delete result.view.el;}
 		if(result.view.$ClassStyle )$_SYS.CSS.set(result,result.view.$ClassStyle); 
 	}  
 	result.objectType = 'object';
