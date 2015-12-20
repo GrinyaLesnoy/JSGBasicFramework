@@ -568,12 +568,11 @@ $_SYS._New = function(){
 	{   result = $_SYS.fn._import({},arguments[0]);  o = arguments[1];  }
 	if(result.extendOf){
 		var pathEx = (result.extendOf.indexOf('classes.')==0)?  result.extendOf.substr(result.extendOf.indexOf('.')+1) :  result.extendOf,
-		_classesArr = result.extendOf.split('.'), obj = classes;   
+		_classesArr = result.extendOf.split('.'), obj = classes, cObj = {};   
 		if(_classesArr[0]=='classes')_classesArr.splice(0,1);
 		for(var i in _classesArr){ 
-			obj = obj[_classesArr[i]];  result = $_SYS.fn.marge(obj,result);
-	 
-		}
+			obj = obj[_classesArr[i]];  cObj = $_SYS.fn._import(cObj,obj);
+		}result = $_SYS.fn.marge(cObj,result); 
 	}
 	
 	if(o.extendOf){
