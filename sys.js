@@ -131,7 +131,9 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			//var dev = ["iphone", "ipad", "android", "phone", "msie"]; 
 		},	
 		
-		
+		isset : function(a){//проверяет существование переменной
+			return  (typeof a!='undefined'&&a!=null);
+		},
  
 	// === Массивы и объекты
 	
@@ -279,6 +281,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 		reCamel : function(a){ // сТрока => с-трока 
 			return a.replace(/([A-Z])/g, function($1){return ('-'+$1.toLowerCase());});
 		},
+		 
 		
 	// === Ф-ции, отвечающие за загрузку
  
@@ -481,7 +484,7 @@ $_SYS.Loader = {
 					if(typeof options.data[key]=='object' && ! (options.data[key].type && options.data[key].type.match(/image.*/)))options.data[key]=JSON.stringify(options.data[key]);
 					formData.append(key, options.data[key]); body += key +'='+options.data[key]+'&';
 				} 
-				if(options.metod.toLowerCase() == 'GET'){
+				if(options.metod.toUpperCase() == 'GET'){
 					options.url = options.url + (options.url.indexOf('?')>=0 ? '' : '?')+ body;
 				}else{
 					options.body = formData;
@@ -926,7 +929,10 @@ if($_SYS.Mouse.tip!='touch'){
 			window.onmousedown= $_SYS.Mouse.Controls.down;//window.event.which
 			window.onmouseup=  $_SYS.Mouse.Controls.up;
 		   //window.onclick=  Mouse.Controls.up;
-		    window.onmousemove =  $_SYS.Mouse.Controls.move;
+		    window.onmousemove =  $_SYS.Mouse.Controls.move; 
+		   window.addEventListener('mousedown',$_SYS.Mouse.Controls.down,false);
+		   window.addEventListener('mouseup', $_SYS.Mouse.Controls.up,false);
+		   window.addEventListener('mousemove', $_SYS.Mouse.Controls.move,false);
 			//mouseover mouseout
 }
 
