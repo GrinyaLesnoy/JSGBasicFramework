@@ -20,6 +20,7 @@ Node.prototype.removeClass = function (cls) {
 };
 
 Node.prototype.hasClass = function(cls) {
+	if(!this.className || this.className=='')return false;
 	for (var c = this.className.split(' '),i=c.length-1; i>=0; i--) {
 		if (c[i] == cls) return true;
 	}
@@ -81,13 +82,45 @@ Node.prototype.getElementsByClass = function(classList) {
 		return result;
 }
 }
-
-Node.prototype.searchUp = function(attrName,_t,attr, max_level){
-	if(!attr){attr = 'id';} //if(!max_level){max_level=false}
-	var result = false;
-	if(_t&&this[attr]==attrName){result = this;}else if(this.offsetParent){result = this.offsetParent.searchUp(attrName,true,attr);}
+ 
+ /*Проверяет принадлежность элемента к какому-либо параметру Node.getParents([by(string), [value(string), [light(boolean)]]])
+ by - индификатор (id, klassName ... ). М.б. использована функция. Если передан без value будет искать по наличию индификатора
+value - значение. для 'hasClass' значение подставляетсяя, для ос. сравнивается
+light - "встречается" ( ищит по indexOf а не по == ; не распространяется на typeof by == function )
+*/
+ Node.prototype.isIt = function(by, value, light){var isset = $_SYS.fn.isset; return ( !isset(by)  || (!isset(value)&&this[by]) || ((typeof this[by] == 'function') ? (by == 'hasClass' ? this[by](value) : this[by]()) : (light ? this[by].indexOf(value)>-1 : this[by]== value))  ); }
+ 
+/*
+Node.getParents([by(string), value(string), [light(boolean)]],[include_this(boolean) = true]) - поиск родительских элементов (начиная с текущего).
+by, value,light аналогичен isIt()
+include_this - включать или нет в поиск текущий элемент (по умолчанию - включен, т.к. наиболее частое применение - поиск, был ли клик по элементу). При передаче в функцию одного параметра 'boolean' считается за include_this (если тип string - будет искать по наличию свойства) 
+*/
+Node.prototype.getParents = function(by,value, light, include_this){
+	if(arguments.length<3)var include_this = true; 
+	if(arguments.length==1&&typeof arguments[0] != 'string')var include_this = arguments[0]; 
+	var result =  [];
+	var e = this;
+	 
+	if(include_this && e.isIt(by,value, light) )result.push(e);
+	while(e.parentNode){
+		e = e.parentNode;
+		if(e.isIt(by,value, light))result.push(e);
+	}
 	return result;
 }
+
+//Поиск элемента по параметру . Аналогично getParents, но include_this по умолчанию false
+Node.prototype.getElementBy=function(by,value, light, include_this){//Ищит дочерние элементы с id. 
+		//var //value = value ? value : 'id';
+		if(arguments.length==1&&typeof arguments[0] != 'string')var include_this = arguments[0]; 
+		var list = this.getElementsByTagName('*'),
+		result = [], i;
+		if(include_this && this.isIt(by,value, light))result.push(this);
+		for(i = 0; i < list.length; i++) { 
+				if(list[i].isIt(by,value, light))result.push(list[i]); 
+		} 
+		return  result;
+ }
 
 Node.prototype.width = function(s){if(typeof s == "undefined"){return this.offsetWidth;} this.style.width=s+"px"; return this;}
 Node.prototype.height = function(s){if(typeof s == "undefined"){return this.offsetHeight;} this.style.height=s+"px"; return this;}
@@ -113,21 +146,6 @@ Node.prototype.XC = function(s){ if(typeof s == "undefined"){return this._X()+th
 Node.prototype.YC = function(s){ if(typeof s == "undefined"){return this._Y()+this.HeightC();} this._Y(s-this.HeightC());  return this; }
 Node.prototype.ZC = function(s) {if(typeof s == "undefined"){return this.style.zIndex;} this.style.zIndex = s;  return this;}
 
-Node.prototype.getElementBy=function(id, attr){//Ищит дочерние элементы с id.
-		var attr = attr ? attr : 'id'
-		var node = this,
-		list = node.getElementsByTagName('*'), 
-		length = list.length,  
-		classArray = classList.split(/\s+/), 
-		classes = classArray.length, 
-		result = [], i,j
-		for(i = 0; i < length; i++) { 
-				if(list[i][attr] == id || list[i].getAttribute(attr) == id) {
-					result.push(list[i]); 
-				} 
-		} 
-		return  result;
- }
 
 Node.prototype.background = function(o){
 	//{color,img,position,repeat, attachment, size}
