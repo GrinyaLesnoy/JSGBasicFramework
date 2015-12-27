@@ -178,11 +178,13 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 		
 		_import : function(a,b){//Слияние объектов Одноименные из b перекрывают a 
 			if(typeof b != "object" || this.isNode(b))return b;
-			if(typeof a != "object" &&typeof b == "object")a={};
+			if( typeof a != "object" )a={};
+			 if( Array.isArray(b) && !Array.isArray(a) )a=[];
+			 if( !Array.isArray(b) &&  Array.isArray(a) )a={};
 			for(var key in b){  //if (b.hasOwnProperty(key)) 
 				if(this.isClass(b[key])||key == 'objectType'){continue;}
-				if (b[key] instanceof Array) {
-					a[key] = ( a[key] && a[key] instanceof Array && b[key] instanceof Array )? a[key] : [];
+				if ( Array.isArray(b[key]) ) {
+					a[key] = (Array.isArray(a[key]))? a[key] : [];
 					for (var i = 0, len = b[key].length; i < len; i++) {
 						a[key][i] = a[key][i]|[];
 						a[key][i] = this._import( a[key][i] , b[key][i]);
@@ -282,7 +284,49 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return a.replace(/([A-Z])/g, function($1){return ('-'+$1.toLowerCase());});
 		},
 		 
+		 
+		 //
+		 
+		listener : function($do, e,event,f, useCapture){
+			switch(event){
+				case '_MOUSE*' :
+				event = ['mousedown','touchstart','mousemove','touchmove','mouseup','touchend']; 
+				break;
+				case '_MOUSE**' :
+				event = ['mousedown','touchstart','mousemove','touchmove','mouseup','touchend', 'mouseover']; 
+				break;
+				case '_DOWN' :
+				event = ['mousedown','touchstart']; 
+				break;
+				case '_MOVE' :
+				event = ['mousemove','touchmove']; 
+				break;
+				case '_UP' :
+				event = ['mouseup','touchend']; 
+				break;
+				default:
+				event = event.split(' ');
+				break;
+			}
+			var type = {
+				'mousedown' : 'down',
+				'touchstart' : 'down',
+				'mouseup' : 'up',
+				'touchend' : 'up',
+				'mousemove' : 'move',
+				'touchmove' : 'move'
+			};
+			for(var i in event){ 
+				e[$do + 'EventListener'](event[i], function(e){ f(e,(type[e.type] || e.type))}, useCapture);
+			}
+		},
+		 on : function(e,event,f, useCapture){
+			this.listener('add', e,event,f, useCapture);
+		 },
 		
+		off : function(e,event,f, useCapture){
+			this.listener('remove', e,event,f, useCapture);
+		 },
 	// === Ф-ции, отвечающие за загрузку
  
 
@@ -727,6 +771,7 @@ $_SYS.CSS = {
 	data : {},
 	_new : 0,
 	Alias : {//Псевдонимы, вида путь -> '<%find%>' : 'replace', для сокращения записи кода
+		'<%path:data%>' : 'Data',
 		'<%path:bg%>' : 'Data/backgrounds',
 		'<%path:textures%>' : 'Data/textures'
 	},
@@ -820,7 +865,7 @@ $_SYS.CSS = {
 			if(arguments.length==2)this.set(arguments[0], arguments[1]);//Можно вызвать set через update
 			if(this._new==0)return;//небыло добавленно ничего нового 
 			this._new=0;//Блокируем повторное либо лишнее выполнение
-			console.log(this.data);
+			//console.log(this.data);
 			var css ='', tmp;
 			if(!this.numValue){//Чтобы вручную не перебивать, т.к. хочу пока оставить список из jQuery, но здесь мне нужен список для обычных css// также, можно было бы пользоваться S_SYS.fn.toCamel( name ) каждый раз, но лучше один раз вызвать
 				 this.numValue={}
@@ -841,7 +886,7 @@ $_SYS.CSS = {
 					}
 				css+="}\n";
 			}
-			console.log(css);
+			if($_GET['debug']=='css')console.log(css);
 			if(!this.el){
 			var head = document.head || document.getElementsByTagName('head')[0];
 			this.el = document.createElement('style');
@@ -880,10 +925,12 @@ $_SYS.Mouse={
 	_y : 0,
 	dx : 0,
 	dy : 0,
+	
 	press : false,
-	Controls : { 
+	 
 		move : function(e){ 
-		if(typeof e.touches!=="undefined" && e.touches[0]){var e=e.touches[0];} 
+		var _this = $_SYS.Mouse;
+		if(typeof e.touches!="undefined" && e.touches[0]){var e=e.touches[0];} 
 			if (e.pageX == null && e.clientX != null ) { // если нет pageX..
 				var html = document.documentElement;
 				var body = document.body; 
@@ -892,49 +939,22 @@ $_SYS.Mouse={
 				e.pageY = e.clientY + (html.scrollTop || body && body.scrollTop || 0);
 				e.pageY -= html.clientTop || 0;
 			}
-		$_SYS.Mouse._x = e.clientX; $_SYS.Mouse._y = e.clientY;  
-		$_SYS.Mouse.dx = e.pageX; $_SYS.Mouse.dy = e.pageY; 
-		if($_SYS.Mouse.onMovie){$_SYS.Mouse.onMovie();} 
-		//main.debugger(Mouse.dx, Mouse.dy);
+		_this._x = e.clientX; _this._y = e.clientY;  
+		_this.dx = e.pageX; _this.dy = e.pageY;   
+		}, 
+		down : function (e){ 
+			$_SYS.Mouse.press = true;
+			$_SYS.Mouse.move(e); 
 		},
-		 getEvent : function(e) {
-			if (!e) e = window.event;
-			console.log(e.type);
-		},
-		down : function (e){
-			if(!$_SYS.Mouse.tip){$_SYS.Mouse.tip='touch';}
-			//Controls.Mouse.getEvent(e);
-			//main.debugger('d');  if(Mouse.press!= true){main.debugger('down');  }
-			$_SYS.Mouse.Controls.move(e);
-			$_SYS.Mouse.press = true;// main.debugger(Mouse.press);//alert(Mouse._x);
-			if($_SYS.Mouse.onDown){$_SYS.Mouse.onDown();} 
-		},
-		up : function (e){
-			//main.debugger('u');  if(Mouse.press!= false){main.debugger('up');  }
-			$_SYS.Mouse.press = false; //main.debugger(Mouse.press);
-			//Controls.Mouse.getEvent(e);
-			if($_SYS.Mouse.onUp){$_SYS.Mouse.onUp();} 
+		up : function (e){ 
+			$_SYS.Mouse.press = false;  
 		}
-	}
 }
  
-
- if(!$_SYS.Mouse.tip||$_SYS.Mouse.tip=='touch'){
-		   window.addEventListener('touchstart',$_SYS.Mouse.Controls.down,false);
-		   window.addEventListener('touchend', $_SYS.Mouse.Controls.up,false);
-		   window.addEventListener('touchmove', $_SYS.Mouse.Controls.move,false); 
-			}
-if($_SYS.Mouse.tip!='touch'){
-			$_SYS.Mouse.tip='mouse';
-			window.onmousedown= $_SYS.Mouse.Controls.down;//window.event.which
-			window.onmouseup=  $_SYS.Mouse.Controls.up;
-		   //window.onclick=  Mouse.Controls.up;
-		    window.onmousemove =  $_SYS.Mouse.Controls.move; 
-		   window.addEventListener('mousedown',$_SYS.Mouse.Controls.down,false);
-		   window.addEventListener('mouseup', $_SYS.Mouse.Controls.up,false);
-		   window.addEventListener('mousemove', $_SYS.Mouse.Controls.move,false);
-			//mouseover mouseout
-}
+$_SYS.fn.on(window,'_DOWN', $_SYS.Mouse.down,false);
+$_SYS.fn.on(window,'_MOVE', $_SYS.Mouse.move,false);
+$_SYS.fn.on(window,'_UP', $_SYS.Mouse.up,false);
+ 
 
 			
  
@@ -985,6 +1005,8 @@ $_SYS.LocalFile = {
 
 window.onkeydown = $_SYS.Key.keyDown;
 window.onkeyup = $_SYS.Key.keyUp;
+
+ 
 
 /*Объект sys задает общие системные функции, как проверка загрузки и т.п.*/
  

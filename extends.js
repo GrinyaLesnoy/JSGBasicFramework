@@ -88,7 +88,7 @@ Node.prototype.getElementsByClass = function(classList) {
 value - значение. для 'hasClass' значение подставляетсяя, для ос. сравнивается
 light - "встречается" ( ищит по indexOf а не по == ; не распространяется на typeof by == function )
 */
- Node.prototype.isIt = function(by, value, light){var isset = $_SYS.fn.isset; return ( !isset(by)  || (!isset(value)&&this[by]) || ((typeof this[by] == 'function') ? (by == 'hasClass' ? this[by](value) : this[by]()) : (light ? this[by].indexOf(value)>-1 : this[by]== value))  ); }
+ Node.prototype.isIt = function(by, value, light){ var isset = $_SYS.fn.isset; return ( !isset(by)  || ( isset(this[by] ) && ( !isset(value)  ||  ((typeof this[by] == 'function') ? (by == 'hasClass' ? this[by](value) : this[by]()) : (light ? (this[by].indexOf(value)>-1) : this[by]== value) ) ) )  ); }
  
 /*
 Node.getParents([by(string), value(string), [light(boolean)]],[include_this(boolean) = true]) - поиск родительских элементов (начиная с текущего).
@@ -162,7 +162,7 @@ Node.prototype.rotate=function(r){this.style.transform = "rotate(7deg)"; }
 Node.prototype.scale=function(s){this.style.transform = "scale("+s+","+s+")"; }
 Node.prototype.mirror=function(s,n){this.style.transform = "scale"+s.toLocaleUpperCase()+"("+n+")"; }
 Node.prototype.show=function(){this.style.display = "block"; }
-Node.prototype.hidden=function(){this.style.display = "none"; }
+Node.prototype.hidde=function(){this.style.display = "none"; }
 
 Node.prototype.position = function(a){
 	var a = a ? a : {}; 
