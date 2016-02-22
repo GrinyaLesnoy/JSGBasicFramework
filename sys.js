@@ -259,6 +259,32 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 			return result;
 		},
 		
+		Array : {
+			_sort : function(a,e,index, dindex){
+				if(!Array.isArray(a))return false;
+				if(index!==false && dindex!==false)e = a[dindex];
+				var b = [];//Вначале исходный массив очищается, затем заполняется вновь - массив не перезаписывается, чтобы сохранились ссылки на объект
+				while(a.length){b.push(a.shift());} 
+				for(var i=0; i<b.length; i++){ 
+				if(i===index)a.push(e); 
+				if(i!==dindex)a.push(b[i]);
+				}
+				return a;
+			},
+			pushTo : function(a,e,index){
+				if(!index&&index!==0)return a.push(e);
+				return this._sort(a,e,index);
+			},
+			removeBy : function(a,dindex){ 
+				if(!dindex&&dindex!==0)return a.pop(e);
+				return this._sort(a,false,false,dindex);
+			},
+			moveTo : function(a,who,to ){ 
+				return this._sort(a,false,to,who);
+			},
+		},
+		
+		
 		replace : function(a,b,str){//Попытка реализовать аналогичную php ф-цию
 			if(typeof a !=="object"){var a = [a];}
 			if(typeof b !=="object"){var b = [b];} 
@@ -287,7 +313,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 		 
 		 //
 		 
-		listener : function($do, e,event,f, useCapture){
+		listener : function($do, e,event,f, useCapture,_this){
 			switch(event){
 				case '_MOUSE*' :
 				event = ['mousedown','touchstart','mousemove','touchmove','mouseup','touchend']; 
@@ -315,17 +341,18 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				'touchend' : 'up',
 				'mousemove' : 'move',
 				'touchmove' : 'move'
-			};
+			}; 
 			for(var i in event){ 
-				e[$do + 'EventListener'](event[i], function(e){ f(e,(type[e.type] || e.type))}, useCapture);
+				f.event_f = function(e){ f.call((_this ? _this : e),e,(type[e.type] || e.type))}
+				e[$do + 'EventListener'](event[i], f.event_f, useCapture);
 			}
 		},
-		 on : function(e,event,f, useCapture){
-			this.listener('add', e,event,f, useCapture);
+		 on : function(e,event,f, useCapture, _this){
+			this.listener('add', e,event,f, useCapture, _this);
 		 },
 		
 		off : function(e,event,f, useCapture){
-			this.listener('remove', e,event,f, useCapture);
+			this.listener('remove', e,event,(f.event_f||f), useCapture);
 		 },
 	// === Ф-ции, отвечающие за загрузку
  
@@ -992,8 +1019,8 @@ $_SYS.LocalFile = {
 			 var reader = new FileReader();
 			 reader.onload = function(event) { var contents = event.target.result;  if(callback)callback.call(_this,f,contents,event);} 
 			 // Read in the image file as a data URL.
-		  
-		if (f.type && f.type.match('image.*')) {
+		 console.log(f.type);
+		if (f.type && (f.type.match('image.*')||f.type.match('audio.*'))) {
 		reader.readAsDataURL(f);
 			}else{
 		reader.readAsText(f);
@@ -1027,8 +1054,17 @@ window.onkeyup = $_SYS.Key.keyUp;
 			$_SYS.Loader._(['extends', 'Main', 'manifest'], function(){
 				$_SYS._New(classes.Main);
 				$_SYS.Loader.Classes(function(){ 
-				var data = manifest.get_library(); 
-						 if(data.images){$_SYS.Loader._(data['images'],main.Init,null,'img');} else {main.Init();}
+					var data = manifest.get_library(); 
+						 var loadImg = function (){ $_SYS.Loader._(data['images'],main.Init,null,'img'); }
+						 if(data.scripts&&data.images){
+							$_SYS.Loader._(data['scripts'],loadImg,null,'script');
+						 }else if(data.images){
+							loadImg();
+						 }else  if(data.scripts&&data.images){
+							$_SYS.Loader._(data['scripts'],main.Init,null,'script');
+						 }else {
+							main.Init();
+						 }
 						 }); 
 			});
 		});  

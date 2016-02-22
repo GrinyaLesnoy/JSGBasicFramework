@@ -1,3 +1,5 @@
+Data = {}
+
 manifest = {
 	tempData : [],//Временное хранилище массива
 	getData : function(obj,path){ 
@@ -26,9 +28,18 @@ manifest.library = {
 			sprites : [
 				'Hero.png'
 			],
-			textures : [
+			textures : [ 
 				'ground01.gif'
-			]
+			],
+			backgrounds: {
+				'default' : [
+					'ground.jpg',
+					'dymka_1.png',
+					'planets_in_sky.jpg',
+					'sky.jpg'
+				]
+			
+			}
 		} 
 	}*/
 }

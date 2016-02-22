@@ -35,8 +35,8 @@ Node.prototype.addChild = function (attr) {
 			}
 			return this;
 		}
-		var exclude = {'content':-1}//список аттрибутов-исключений
-		var a = document.createElement(attr.TagName ? attr.TagName : 'div');
+		var exclude = {'content':-1}//список аттрибутов-исключений   
+		var a = document.createElement(attr.TagName || attr.tagName || 'div');
 		for(var key in attr){if(attr.hasOwnProperty(key)&&!exclude[key])a[key]=attr[key];}  //a.setAttribute(key , attr [key]);
 		if(attr['content'])a.innerHTML = attr['content'];
 		return this.appendChild(a);
@@ -49,6 +49,14 @@ Node.prototype.addChild = function (attr) {
 		if(a.childNodes.length[1]){ return this.appendChild(a.childNodes[0]); }
 		for(var i=0; i<a.childNodes.length; i++ ){  this.appendChild(a.childNodes[i]);}
 		return returnChild ? a.childNodes : this;
+	}
+	
+	
+	Node.prototype.appAfter = function(newNode) {
+		this.parentNode.insertBefore(newNode, this.nextSibling);
+	}
+	Node.prototype.appBefore = function(newNode) {
+		this.parentNode.insertBefore(newNode, this);
 	}
 	
 	Element.prototype.remove = function() {
@@ -110,7 +118,7 @@ Node.prototype.getParents = function(by,value, light, include_this){
 }
 
 //Поиск элемента по параметру . Аналогично getParents, но include_this по умолчанию false
-Node.prototype.getElementBy=function(by,value, light, include_this){//Ищит дочерние элементы с id. 
+Node.prototype.getElementsBy=function(by,value, light, include_this){//Ищит дочерние элементы с id. 
 		//var //value = value ? value : 'id';
 		if(arguments.length==1&&typeof arguments[0] != 'string')var include_this = arguments[0]; 
 		var list = this.getElementsByTagName('*'),
