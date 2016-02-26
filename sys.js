@@ -313,7 +313,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 		 
 		 //
 		 
-		listener : function($do, e,event,f, useCapture,_this){
+		listener : function($do, e,event,f, useCapture,_this_){
 			switch(event){
 				case '_MOUSE*' :
 				event = ['mousedown','touchstart','mousemove','touchmove','mouseup','touchend']; 
@@ -343,12 +343,12 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				'touchmove' : 'move'
 			}; 
 			for(var i in event){ 
-				f.event_f = function(e){ f.call((_this ? _this : e),e,(type[e.type] || e.type))}
+				f.event_f = function(e){ f.call((_this_ ? _this_ : e),e,(type[e.type] || e.type))}
 				e[$do + 'EventListener'](event[i], f.event_f, useCapture);
 			}
 		},
-		 on : function(e,event,f, useCapture, _this){
-			this.listener('add', e,event,f, useCapture, _this);
+		 on : function(e,event,f, useCapture, _this_){
+			this.listener('add', e,event,f, useCapture, _this_);
 		 },
 		
 		off : function(e,event,f, useCapture){
@@ -373,7 +373,8 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				for(var s in src){
 					var name = src[s]; 
 					var el = document.createElement('script');
-					el.src = path + name +'.js';   
+					el.src = path + name;  
+					if(el.src.indexOf('.')==-1||el.src.substr(el.src.lastIndexOf('.'))!='.js')el.src+= '.js';
 					el.name= name; 	
 					document.getElementsByTagName('head')[0].appendChild(el);		
 					el.onload = function(){ 
@@ -509,7 +510,19 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 }
 /** = /END Библиотека вспомогательных функций  = **/
 
+ /** == ZIP == **/
  
+ $_SYS.ZIP = {
+	UnPack : function(data){
+		
+	},
+	Pack : function(data){
+		
+	}
+ 
+ }
+ 
+ /** == END ZIP == **/
  
 /** = Загрузка скриптов, классов и изображений = **/
 $_SYS.Loader = {
@@ -531,18 +544,18 @@ $_SYS.Loader = {
 	  }
 	  return xmlhttp;
 	},
-	LoadData :  function(url, _callback, type, _this) {
+	LoadData :  function(url, _callback, type, _this_) {
 			var xmlhttp = this.getXmlHttp(); // code for IE7+, Firefox, Chrome, Opera, Safari  
 				var options = {
 					url : '',
-					_this : xmlhttp,
+					_this_ : xmlhttp,
 					_callback : function(data){ console.log(data);},
 					type : 'data',
 					metod : 'GET'
 				};
 			 if(typeof arguments[0] == 'object'){//Возможна передача параметров как в виде объекта, так и последовательностью 
-				for(var i in arguments[0]){options[i]=arguments[0][i];}//$_SYS.fn._import нельзя использовать. т.к. клонирует _this
-				 if(typeof arguments[1] == 'object'){options._this = arguments[1];}
+				for(var i in arguments[0]){options[i]=arguments[0][i];}//$_SYS.fn._import нельзя использовать. т.к. клонирует _this_
+				 if(typeof arguments[1] == 'object'){options._this_ = arguments[1];}
 			 }else{ 
 				for(var key in options){if(window[key])options[key]=window[key];}
 			 }
@@ -567,7 +580,7 @@ $_SYS.Loader = {
 					if (xmlhttp.readyState == 4) {//Complete 
 					   var data = xmlhttp.responseText;  
 					   if(options.type=="script") {data = eval('('+data+')');} else if(options.type.toLowerCase()=="json"){ data = JSON.parse(data);}
-					   options._callback.call(options._this, data,xmlhttp,options); 
+					   options._callback.call(options._this_, data,xmlhttp,options); 
 					   }
 				   }  else { console.log('Err '+url,xmlhttp);  }
 				}
@@ -590,27 +603,28 @@ $_SYS.Loader = {
 			if(eval('root.'+path)){_callback(); return;} 
 			url =  path.replace(/\./g, '/');
 		} 
-			if(type == 'script'){url+='.js';}
+			//if(type == 'script'){url+='.js';}
+			if(type == 'script' && (url.indexOf('.')==-1||url.substr(url.lastIndexOf('.'))!='.js'))url+= '.js';
 		this.LoadItem(url,_callback, type);
 	},
 	_ : function(list, _callback,_update,type){//Пакетная загрузка
-		var _this = this;
-		if(!_this._callback){_this._callback=_callback;}
-		_this.loaded-=list.length; 
+		var _this_ = this;
+		if(!_this_._callback){_this_._callback=_callback;}
+		_this_.loaded-=list.length; 
 		
 		list.forEach(function(item, k, arr) { 
-			_this.Include(item,function(){ if(_update){_update(item);} _this.loaded++;   if(_this.loaded==0){var _callback = _this._callback; delete _this._callback;  _callback(); }},type);
+			_this_.Include(item,function(){ if(_update){_update(item);} _this_.loaded++;   if(_this_.loaded==0){var _callback = _this_._callback; delete _this_._callback;  _callback(); }},type);
 		});
 	},
 	Classes : function( f ){//Загрузка классов
-		var _this = this;
+		var _this_ = this;
 		if(!classes.$_import || classes.$_import.length==0){f();return;}
-		_this._callback = f;
+		_this_._callback = f;
 		var _update = function(path){ 
 			//root.classes(path); - получает объект класса, а так же задает самому классу свойства класса
-			var obj = root.classes(path); if(obj.$_import && obj.$_import.length>0){_this._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);} 
+			var obj = root.classes(path); if(obj.$_import && obj.$_import.length>0){_this_._(obj.$_import.map(function(i){return (path+'.'+i);}),f,_update);} 
 		};
-		_this.Include('classes',function(){ _update('classes'); }); 
+		_this_.Include('classes',function(){ _update('classes'); }); 
 	}
 }
 
@@ -956,7 +970,7 @@ $_SYS.Mouse={
 	press : false,
 	 
 		move : function(e){ 
-		var _this = $_SYS.Mouse;
+		var _this_ = $_SYS.Mouse;
 		if(typeof e.touches!="undefined" && e.touches[0]){var e=e.touches[0];} 
 			if (e.pageX == null && e.clientX != null ) { // если нет pageX..
 				var html = document.documentElement;
@@ -966,8 +980,8 @@ $_SYS.Mouse={
 				e.pageY = e.clientY + (html.scrollTop || body && body.scrollTop || 0);
 				e.pageY -= html.clientTop || 0;
 			}
-		_this._x = e.clientX; _this._y = e.clientY;  
-		_this.dx = e.pageX; _this.dy = e.pageY;   
+		_this_._x = e.clientX; _this_._y = e.clientY;  
+		_this_.dx = e.pageX; _this_.dy = e.pageY;   
 		}, 
 		down : function (e){ 
 			$_SYS.Mouse.press = true;
@@ -1011,19 +1025,20 @@ $_SYS.Key = {
 }
 
 $_SYS.LocalFile = { 
-	read : function(files, callback, _this){ 
+	read : function(files, callback, _this_){ 
 		if(!window.File && window.FileReader && window.FileList && window.Blob){allert('not support browser!'); return;}
-		if(!_this){_this = this;}
+		if(!_this_){_this_ = this;}
 		 if(!files.length){files = [files];}
 		for (var i = 0, f; f = files[i]; i++) {
 			 var reader = new FileReader();
-			 reader.onload = function(event) { var contents = event.target.result;  if(callback)callback.call(_this,f,contents,event);} 
+			reader.File	= f;		 
+			 reader.onload = function(event) {   if(callback)callback.call(_this_,this.File,event.target.result,event);} 
 			 // Read in the image file as a data URL.
-		 console.log(f.type);
-		if (f.type && (f.type.match('image.*')||f.type.match('audio.*'))) {
-		reader.readAsDataURL(f);
+		 console.log(f.type);  
+		if (!f.type || !f.type.match('text.*')) {
+			reader.readAsDataURL(f);
 			}else{
-		reader.readAsText(f);
+			reader.readAsText(f);
 		}
 		}
 	}
@@ -1056,11 +1071,11 @@ window.onkeyup = $_SYS.Key.keyUp;
 				$_SYS.Loader.Classes(function(){ 
 					var data = manifest.get_library(); 
 						 var loadImg = function (){ $_SYS.Loader._(data['images'],main.Init,null,'img'); }
-						 if(data.scripts&&data.images){
+						 if(data.scripts&&data.images){console.log();
 							$_SYS.Loader._(data['scripts'],loadImg,null,'script');
 						 }else if(data.images){
 							loadImg();
-						 }else  if(data.scripts&&data.images){
+						 }else  if(data.scripts){
 							$_SYS.Loader._(data['scripts'],main.Init,null,'script');
 						 }else {
 							main.Init();
