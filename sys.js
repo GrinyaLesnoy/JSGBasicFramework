@@ -510,19 +510,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 }
 /** = /END Библиотека вспомогательных функций  = **/
 
- /** == ZIP == **/
- 
- $_SYS.ZIP = {
-	UnPack : function(data){
-		
-	},
-	Pack : function(data){
-		
-	}
- 
- }
- 
- /** == END ZIP == **/
+
  
 /** = Загрузка скриптов, классов и изображений = **/
 $_SYS.Loader = {
@@ -1025,7 +1013,23 @@ $_SYS.Key = {
 }
 
 $_SYS.LocalFile = { 
-	read : function(files, callback, _this_){ 
+	setListener  : function(el, callback, _this_,readAs){ 
+		if(!_this_){_this_ = this;}
+		 $_SYS.fn.on(el, 'dragenter dragstart dragend dragleave dragover drag drop', function(e){ e.preventDefault(); });
+		 
+		 $_SYS.fn.on(el, 'dragover', function(e){ 
+			e.target.addClass('dragover');
+		}); 
+		 $_SYS.fn.on(el, 'dragleave', function(e){ 
+			e.target.removeClass('dragover');
+		});  
+		$_SYS.fn.on(el, 'drop', function(event) {  
+			event.target.removeClass('dragover');
+			  $_SYS.LocalFile.read(event.dataTransfer.files,callback,_this_,readAs); 
+			 event.preventDefault();
+		},false,_this_);
+	},
+	read : function(files, callback, _this_,readAs){ //readAs
 		if(!window.File && window.FileReader && window.FileList && window.Blob){allert('not support browser!'); return;}
 		if(!_this_){_this_ = this;}
 		 if(!files.length){files = [files];}
@@ -1034,14 +1038,26 @@ $_SYS.LocalFile = {
 			reader.File	= f;		 
 			 reader.onload = function(event) {   if(callback)callback.call(_this_,this.File,event.target.result,event);} 
 			 // Read in the image file as a data URL.
-		 console.log(f.type);  
-		if (!f.type || !f.type.match('text.*')) {
-			reader.readAsDataURL(f);
-			}else{
-			reader.readAsText(f);
+			console.log(f.type);  
+		 
+			if(!readAs)  var readAs = (!f.type || !f.type.match('text.*')) ? 'DataURL' : 'Text'; 
+			readAs = (readAs.indexOf('readAs')==0 ? readAs : 'readAs'+readAs);
+			reader[readAs](f);
 		}
+	},
+	
+	 uint8ToString : function(buf) {
+		var i, length, out = '';
+		for (i = 0, length = buf.length; i < length; i += 1) {
+			out += String.fromCharCode(buf[i]);
 		}
-	}
+		return out;
+	},
+	
+	getBase64 : function(Uint8Array, contentType){
+		contentType = contentType ? "data:" + contentType + ";base64," : '';
+		return contentType+btoa(this.uint8ToString(Uint8Array));
+	},
 	
 }
 
