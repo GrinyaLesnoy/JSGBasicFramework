@@ -1,26 +1,36 @@
 /* === Расширения для NODE === */
 
+/*if(!Node.prototype.classList){
+	
+	
+	
+}*/
 
 Node.prototype.addClass = function (cls) { 
+	if(this.classList&&this.classList.add)this.classList.add(cls); return this;
 	var c = this.className ? this.className.split(' ') : [];
 	for (var i=0; i<c.length; i++) {
-		if (c[i] == cls) return;
+		if (c[i] == cls) return this;
 	}
 	c.push(cls);
 	this.className = c.join(' ');
+	return this;
 };
 
 
 Node.prototype.removeClass = function (cls) {
+	if(this.classList&&this.classList.remove)this.classList.remove(cls); return this;
 	var c = this.className.split(' ');
 	for (var i=0; i<c.length; i++) {
 		if (c[i] == cls) c.splice(i--, 1);
 	}
 	this.className = c.join(' ');
+	 return this;
 };
 
 Node.prototype.hasClass = function(cls) {
 	if(!this.className || this.className=='')return false;
+	if(this.classList&&this.classList.contain)return this.classList.contains(cls); 
 	for (var c = this.className.split(' '),i=c.length-1; i>=0; i--) {
 		if (c[i] == cls) return true;
 	}
@@ -99,17 +109,17 @@ light - "встречается" ( ищит по indexOf а не по == ; не 
  Node.prototype.isIt = function(by, value, light){ var isset = $_SYS.fn.isset; return ( !isset(by)  || ( isset(this[by] ) && ( !isset(value)  ||  ((typeof this[by] == 'function') ? (by == 'hasClass' ? this[by](value) : this[by]()) : (light ? (this[by].indexOf(value)>-1) : this[by]== value) ) ) )  ); }
  
 /*
-Node.getParents([by(string), value(string), [light(boolean)]],[include_this(boolean) = true]) - поиск родительских элементов (начиная с текущего).
+Node.getParents([by(string), value(string), [light(boolean)]],[include_this_(boolean) = true]) - поиск родительских элементов (начиная с текущего).
 by, value,light аналогичен isIt()
-include_this - включать или нет в поиск текущий элемент (по умолчанию - включен, т.к. наиболее частое применение - поиск, был ли клик по элементу). При передаче в функцию одного параметра 'boolean' считается за include_this (если тип string - будет искать по наличию свойства) 
+include_this_ - включать или нет в поиск текущий элемент (по умолчанию - включен, т.к. наиболее частое применение - поиск, был ли клик по элементу). При передаче в функцию одного параметра 'boolean' считается за include_this_ (если тип string - будет искать по наличию свойства) 
 */
-Node.prototype.getParents = function(by,value, light, include_this){
-	if(arguments.length<3)var include_this = true; 
-	if(arguments.length==1&&typeof arguments[0] != 'string')var include_this = arguments[0]; 
+Node.prototype.getParents = function(by,value, light, include_this_){
+	if(arguments.length<3)var include_this_ = true; 
+	if(arguments.length==1&&typeof arguments[0] != 'string')var include_this_ = arguments[0]; 
 	var result =  [];
 	var e = this;
 	 
-	if(include_this && e.isIt(by,value, light) )result.push(e);
+	if(include_this_ && e.isIt(by,value, light) )result.push(e);
 	while(e.parentNode){
 		e = e.parentNode;
 		if(e.isIt(by,value, light))result.push(e);
@@ -117,28 +127,28 @@ Node.prototype.getParents = function(by,value, light, include_this){
 	return result;
 }
 
-//Поиск элемента по параметру . Аналогично getParents, но include_this по умолчанию false
-Node.prototype.getElementsBy=function(by,value, light, include_this){//Ищит дочерние элементы с id. 
+//Поиск элемента по параметру . Аналогично getParents, но include_this_ по умолчанию false
+Node.prototype.getElementsBy=function(by,value, light, include_this_){//Ищит дочерние элементы с id. 
 		//var //value = value ? value : 'id';
-		if(arguments.length==1&&typeof arguments[0] != 'string')var include_this = arguments[0]; 
+		if(arguments.length==1&&typeof arguments[0] != 'string')var include_this_ = arguments[0]; 
 		var list = this.getElementsByTagName('*'),
 		result = [], i;
-		if(include_this && this.isIt(by,value, light))result.push(this);
+		if(include_this_ && this.isIt(by,value, light))result.push(this);
 		for(i = 0; i < list.length; i++) { 
 				if(list[i].isIt(by,value, light))result.push(list[i]); 
 		} 
 		return  result;
  }
 
-Node.prototype.width = function(s){if(typeof s == "undefined"){return this.offsetWidth;} this.style.width=s+"px"; return this;}
-Node.prototype.height = function(s){if(typeof s == "undefined"){return this.offsetHeight;} this.style.height=s+"px"; return this;}
+Node.prototype.width = Node.prototype.Width = function(s){if(typeof s == "undefined"){return this.offsetWidth;} this.style.width=s+"px"; return this;}
+Node.prototype.height = Node.prototype.Height = function(s){if(typeof s == "undefined"){return this.offsetHeight;} this.style.height=s+"px"; return this;}
 Node.prototype.FullWH = function(a,s,margin){//Полный размер, включая padding, border [margin]. Можно как получить, так и задать
 var style = window.getComputedStyle(this, null),
-p = 0, l = (a == 'height') ? ['top, bottom'] : ['left, right']; 
-for(var i; i<2; i++){
-	p += parseInt('border-' + l[i] + '-width');
-	p += parseInt('padding-' +  l[i]);
-	if(margin)p += parseInt('margin-' + l[i] );
+p = 0, l = (a == 'height') ? ['top', 'bottom'] : ['left', 'right'];  
+for(var i in l){ 
+	p += parseInt(style['border-' + l[i] + '-width']);
+	p += parseInt(style['padding-' +  l[i]]);
+	if(margin)p += parseInt(style['margin-' + l[i]] ); 
 }
 if(typeof s == "number" ){ this.style[a]=(s-p)+"px"; return this;}return this['offset'+$_SYS.fn.toTitleCase(a)]+p;
 }
