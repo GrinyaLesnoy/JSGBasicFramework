@@ -57,7 +57,43 @@ root.interfaces = function(){}
  //Позволяет автоматически загружать нужные классы и присваивать им свойства классов (вызов classes()), но, если класс не будет найден программа зависнит
 root.classes.$_import = [];
 
-
+root.Data = {}
+/**
+		хранилище строковых переменных
+		Добавляется путем создание объекта
+		Data.Strings.ru = {
+			string1_ID : 'строка 1',
+			string2_ID : 'строка 2',
+		}
+		либо, через функцию Data.Strings._st(string1_ID, 'строка 1','ru');
+		возвращается через функцию Data.Strings._gt(string1_ID,'ru');
+		либо __str(string1_ID,'ru'); (второй параметр не обязательный - по умолчаню, берется язык браузера). В случае неудачи, возвращает обратно string1_ID (таким образом, alert(__str('dog1')) вернет строку в не зависимости от существованияя перевода
+**/
+  Data.Strings = {
+	_gt : function(strID, ln){//Get string translate
+		ln = ln || $_SYS.info.ln;  
+		return this[ln]&&this[ln][strID] ? this[ln][strID] : strID;
+	},
+	_st : function( ){//Set string translate (string strID, string repl, [string language] || object strID, [object repl], [string language] )
+	//('book','книга','ru') || ({'book' : 'книга','dog':'собака'},'ru') || (['book','dog'],['книга','собака'],'ru')
+	//return translate string || boolean (true | false)
+		var strID, repl, ln;
+		strID = arguments[0];
+		if((typeof arguments[0] == typeof arguments[1]))repl = arguments[1]; 
+		 ln = (arguments.length == 2 && !repl)?arguments[1] : (arguments.length == 3 )?arguments[2] : $_SYS.info.ln;
+		 if(!(typeof ln=='string' || typeof ln=='number') || (typeof ln=='string'&&ln.length>10))return false; //предохранитель от попадания текста
+		 if(!this[ln])this[ln]={};
+		 if (typeof strID == 'object'){
+			if(repl) for(var i in strID) this[ln][strID[i]]=repl[i]; else for(var i in strID) this[ln][i]=strID[i];  
+		}else{
+			this[ln][strID]=repl;
+			return this._gt(strID,ln);
+		}
+		return true;
+	}
+}
+//псевдоним
+root.__str = function(){return Data.Strings._gt.apply( Data.Strings,  arguments);}
 var sys = function(obj) {
     if (obj instanceof sys) return obj;
     if (!(this instanceof sys)) return new sys(obj);
@@ -128,7 +164,8 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				Height : $_SYS.fn.min([document.documentElement.clientHeight, window.screen.availHeight, window.innerHeight,window.screen.height])
 			}
 			this.ua = navigator.userAgent.toLowerCase();
-			//var dev = ["iphone", "ipad", "android", "phone", "msie"]; 
+			//var dev = ["iphone", "ipad", "android", "phone", "msie"];  appCodeName
+			this.ln = $_GET['ln'] || navigator.language || navigator.userLanguage;
 		},	
 		
 		isset : function(a){//проверяет существование переменной
@@ -325,7 +362,7 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 				event = ['mousedown','touchstart']; 
 				break;
 				case '_MOVE' :
-				event = ['mousemove','touchmove']; 
+				event = ['mousemove','touchmove'];  
 				break;
 				case '_UP' :
 				event = ['mouseup','touchend']; 
@@ -440,14 +477,14 @@ $_SYS.Library = $_SYS.fn = $_SYS.lib = {
 	
 	createBlock : function(parent, attr, update){
 		var parent = (typeof parent == 'object') ? parent :
-		(parent=='body'||parent=='window'||parent=='screen'||parent=='root') ? document.body :
+		(!parent || parent=='window' || parent=='screen')? false:(parent=='body'||parent=='root') ? document.body :
 		document.getElementById(parent); 
 		var el; 
 		if(update && attr.id){ el = document.getElementById(attr.id);}  
-		if(!el){el = document.createElement('div'); update=false;}
+		if(!el){el = document.createElement(attr.TagName || 'div'); update=false;}
 		
 		for(var key in attr){if( attr[key]!='__fun' && attr[key]!='__styles') el[key] = attr [key];}
-		if(!update) parent.appendChild(el);
+		if(parent && !update) parent.appendChild(el);
 		//Функции, выполняемые для элемента, передается ввиде __fun : {funct_name : args, ...} =>для el.funct_name(args);
 		//__styles и __fun по сути - равнозначные функции.  Реализовал ввиде по отдельности для лучшей читабельности кода. Условно __styles - функции, отвечающие за стили, __fun - все остальные
 		if( attr.__styles ){   $_SYS.fn.forEach(attr.__styles,function(value,s){ if(typeof el[s] == "function")el[s](value); })}; 
@@ -678,14 +715,23 @@ $_SYS._New = function(){
 		if(className!='')result.className = className;
 		['id','className','__fun','__styles'].forEach(function(a){if(result[a])el_attr[a]=result[a];if(result.view[a])el_attr[a]=result.view[a];}); 
 		//if(typeof result.parent == "string"){result.parent = eval(result.parent);} 
-		if(!result.parentNode){
+		if(!result.parentNode&&result.parentNode!==false){
+			//result.parentNode == false - создает виртуальный объект (для последующего размещения)
 			//parent.view.el и parentNode могут отличаться: parent - это ссылка на родительский объект в иерархии объектов, но иерархия вложенности элементв в DOM может не совпадать (по сути, они вообще могут как угодно располагаться)
 			result.parentNode = $_SYS.GetEl(result.parent);
 
 		}
-		if(result.view.el!==false){
-			if(typeof result.view.el == 'string'){result.view.el = document.getElementById(result.view.el); }//возможность передавать уже имеюшийся элемент либо вообще запрещать его создавать
-			if( !result.view.el )result.view.el  = $_SYS.fn.createBlock(result.parentNode, el_attr);
+		if(result.view.el!==false){//возможность передавать уже имеюшийся элемент либо вообще запрещать его создавать
+			switch (typeof result.view.el){
+				case 'string':
+					result.view.el = document.getElementById(result.view.el);
+				break;
+				case 'object'://Может быть передан node или объект с параметрами
+					if($_SYS.fn.isNode(result.view.el)) break;
+					else for(var i in result.view.el)el_attr[i]=result.view.el[i]; 
+				default :
+				result.view.el  = $_SYS.fn.createBlock(result.parentNode, el_attr);
+			} 
 		}else{delete result.view.el;}
 		if(result.view.$ClassStyle )$_SYS.CSS.set(result,result.view.$ClassStyle); 
 	}  
@@ -1014,6 +1060,7 @@ $_SYS.Key = {
 
 $_SYS.LocalFile = { 
 	setListener  : function(el, callback, _this_,readAs){ 
+		el.draggable = "true";
 		if(!_this_){_this_ = this;}
 		 $_SYS.fn.on(el, 'dragenter dragstart dragend dragleave dragover drag drop', function(e){ e.preventDefault(); });
 		 
